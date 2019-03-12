@@ -32,6 +32,6 @@ with open("ectimes.csv", "r") as inf, open("eckeys.csv", "w") as outf:
 
         # parsed
         row = next(reader)
-        row[1] = pub
-        row[2] = pri
+        row[1] = pub.replace(":", "")
+        row[2] = pri.replace(":", "")
         writer.writerow(row + [''])

@@ -1,7 +1,7 @@
 all: eckeygen
 
 eckeygen: eckeygen.c
-	clang $^ -g -lwolfssl -o $@
+	clang $^ -lwolfssl -o $@
 
 clean:
 	rm -rf eckeygen
