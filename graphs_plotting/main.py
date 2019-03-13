@@ -72,21 +72,21 @@ def prepare_rsa_times(path):
 
 if __name__ == '__main__':
     # ECC MSB X
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 0, 2, 1),
+    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 2, 4, 1),
                'MSB of point X', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 0, 2, 1),
+    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 2, 4, 1),
                'MSB of point X', None, None)
 
     # ECC LSB X
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 63, 65, 1),
+    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 64, 66, 1),
                'LSB of point X', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 63, 65, 1),
+    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 64, 66, 1),
                'LSB of point X', None, None)
 
     # ECC MSB Y
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 65, 67, 1),
+    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 66, 68, 1),
                'MSB of point Y', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 65, 67, 1),
+    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 66, 68, 1),
                'MSB of point Y', None, None)
 
     # ECC LSB Y
