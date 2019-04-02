@@ -86,6 +86,7 @@ int wc_RNG_GenerateBlock(WC_RNG* rng, byte* output, word32 sz)
             }
             output[i] = x;
         }
+        fclose(f);
         return 0;
     }
     return RNG_GenerateBlock_fips(rng, output, sz);
@@ -858,6 +859,7 @@ int wc_RNG_GenerateBlock(WC_RNG* rng, byte* output, word32 sz)
             }
             output[i] = x;
         }
+        fclose(f);
         return 0;
     }
 

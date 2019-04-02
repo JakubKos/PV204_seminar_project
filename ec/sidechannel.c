@@ -22,6 +22,49 @@
 #define DATA_0x8000 4
 #define DATA_0x0000 5
 
+void setup_prng(int prng, int zeros) {
+    if(prng == PRNG_NORMAL) {
+        setenv("CUSTOM_RNG", "0", 0);
+        return;
+    }
+
+    setenv("CUSTOM_RNG", "1", 0);
+
+    FILE* r = fopen("/tmp/random", "wb");
+    if(zeros) {
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+    }
+
+    for(int i = 0; i < 256; ++i) {
+        switch(prng) {
+            case PRNG_0xFFFF: fputc(0xff, r); break;
+            case PRNG_0x00FF: fputc(0x00, r); fputc(0xff, r); break;
+            case PRNG_0xAAAA: fputc(0xaa, r); break;
+            case PRNG_0x8000: fputc(0x80, r); fputc(0x00, r); break;
+        }
+    }
+
+    if(prng == PRNG_LOW001) {
+        for(int i = 0; i < 31; ++i)
+            fputc(0x00, r);
+        fputc(0x01, r);
+    }
+    else if(prng == PRNG_HIG800) {
+        fputc(0x80, r);
+        for(int i = 0; i < 31; ++i)
+            fputc(0x00, r);
+    }
+
+    fclose(r);
+}
+
 int main(int argc, char** argv) {
     int prng = 0;
     int data = 0;
@@ -35,44 +78,12 @@ int main(int argc, char** argv) {
     word32 outLen = 256;
     byte bk[256];
     word32 bkLen = 256;
+    byte sig[512];
+    word32 sigLen = 512;
 
-    FILE* r;
-    if(prng != PRNG_NORMAL) {
-        setenv("CUSTOM_RNG", "1", 0);
-        r = fopen("/tmp/random", "wb");
-        fputc(0x00, r);
-        fputc(0x00, r);
-        fputc(0x00, r);
-        fputc(0x00, r);
-        fputc(0x00, r);
-        fputc(0x00, r);
-        fputc(0x00, r);
-        fputc(0x00, r);
+    setup_prng(prng, 1);
 
-        for(int i = 0; i < 128; ++i) {
-            switch(prng) {
-                case PRNG_0xFFFF: fputc(0xff, r); break;
-                case PRNG_0x00FF: fputc(0x00, r); fputc(0xff, r); break;
-                case PRNG_0xAAAA: fputc(0xaa, r); break;
-                case PRNG_0x8000: fputc(0x80, r); fputc(0x00, r); break;
-            }
-        }
-
-        if(prng == PRNG_LOW001) {
-            for(int i = 0; i < 31; ++i)
-                fputc(0x00, r);
-            fputc(0x01, r);
-        }
-        else if(prng == PRNG_HIG800) {
-            fputc(0x80, r);
-            for(int i = 0; i < 31; ++i)
-                fputc(0x00, r);
-        }
-
-        fclose(r);
-    }
-
-    for(int i = 0; i < 128; i += 2) {
+    for(int i = 0; i < 256; i += 2) {
         switch(data) {
             case DATA_NORMAL: in[i] = i; in[i+1] = i+1; break;
             case DATA_0xFFFF: in[i] = 0xff; in[i+1] = 0xff; break;
@@ -87,6 +98,8 @@ int main(int argc, char** argv) {
     FILE* fenc = fopen(buffer, "w");
     sprintf(buffer, "prng%ddata%ddec.txt", prng, data);
     FILE* fdec = fopen(buffer, "w");
+    sprintf(buffer, "prng%ddata%dsig.txt", prng, data);
+    FILE* fsig = fopen(buffer, "w");
 
     WC_RNG rng;
     wc_InitRng(&rng);
@@ -99,8 +112,12 @@ int main(int argc, char** argv) {
     wc_ecc_init(&keyB);
     wc_ecc_make_key_ex(&rng, 32, &keyB, ECC_SECP256R1);
 
+    setup_prng(prng, 0);
 
     for(int i = 0; i < 1000; ++i) {
+        outLen = 256;
+        bkLen = 256;
+        sigLen = 512;
         {
             clock_t begin = clock();
             if(wc_ecc_encrypt(&keyA, &keyB, in, 128, out, &outLen, NULL) != 0)
@@ -118,8 +135,18 @@ int main(int argc, char** argv) {
             long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
             fprintf(fdec, "%ld\n", elapsed_microsecs);
         }
+
+        {
+            clock_t begin = clock();
+            if(wc_ecc_sign_hash(in, 32, sig, &sigLen, &rng, &keyA) != 0)
+                return 3;
+            clock_t end = clock();
+            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
+            fprintf(fsig, "%ld\n", elapsed_microsecs);
+        }
     }
 
+    fclose(fsig);
     fclose(fdec);
     fclose(fenc);
     return 0;
