@@ -12,6 +12,8 @@
 #define PRNG_0x00FF 2
 #define PRNG_0xAAAA 3
 #define PRNG_0x8000 4
+#define PRNG_LOW001 5
+#define PRNG_HIG800 6
 
 #define DATA_NORMAL 0
 #define DATA_0xFFFF 1
@@ -38,16 +40,35 @@ int main(int argc, char** argv) {
     if(prng != PRNG_NORMAL) {
         setenv("CUSTOM_RNG", "1", 0);
         r = fopen("/tmp/random", "wb");
-    }
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
+        fputc(0x00, r);
 
-    switch(prng) {
-        case PRNG_0xFFFF: fputc(0xff, r); break;
-        case PRNG_0x00FF: fputc(0x00, r); fputc(0xff, r); break;
-        case PRNG_0xAAAA: fputc(0xaa, r); break;
-        case PRNG_0x8000: fputc(0x80, r); fputc(0x00, r); break;
-    }
+        for(int i = 0; i < 128; ++i) {
+            switch(prng) {
+                case PRNG_0xFFFF: fputc(0xff, r); break;
+                case PRNG_0x00FF: fputc(0x00, r); fputc(0xff, r); break;
+                case PRNG_0xAAAA: fputc(0xaa, r); break;
+                case PRNG_0x8000: fputc(0x80, r); fputc(0x00, r); break;
+            }
+        }
 
-    if(prng != PRNG_NORMAL) {
+        if(prng == PRNG_LOW001) {
+            for(int i = 0; i < 31; ++i)
+                fputc(0x00, r);
+            fputc(0x01, r);
+        }
+        else if(prng == PRNG_HIG800) {
+            fputc(0x80, r);
+            for(int i = 0; i < 31; ++i)
+                fputc(0x00, r);
+        }
+
         fclose(r);
     }
 
