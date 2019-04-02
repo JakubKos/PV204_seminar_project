@@ -1,54 +1,54 @@
-all: eckeygen encdec-sidechannel
+all: eckeygen sidechannel
 
-measure-sidechannel: encdec-sidechannel
-	./encdec-sidechannel 0 0
-	./encdec-sidechannel 1 0
-	./encdec-sidechannel 2 0
-	./encdec-sidechannel 3 0
-	./encdec-sidechannel 4 0
-	./encdec-sidechannel 5 0
-	./encdec-sidechannel 6 0
-	./encdec-sidechannel 0 1
-	./encdec-sidechannel 1 1
-	./encdec-sidechannel 2 1
-	./encdec-sidechannel 3 1
-	./encdec-sidechannel 4 1
-	./encdec-sidechannel 5 1
-	./encdec-sidechannel 6 1
-	./encdec-sidechannel 0 2
-	./encdec-sidechannel 1 2
-	./encdec-sidechannel 2 2
-	./encdec-sidechannel 3 2
-	./encdec-sidechannel 4 2
-	./encdec-sidechannel 5 2
-	./encdec-sidechannel 6 2
-	./encdec-sidechannel 0 3
-	./encdec-sidechannel 1 3
-	./encdec-sidechannel 2 3
-	./encdec-sidechannel 3 3
-	./encdec-sidechannel 4 3
-	./encdec-sidechannel 5 3
-	./encdec-sidechannel 6 3
-	./encdec-sidechannel 0 4
-	./encdec-sidechannel 1 4
-	./encdec-sidechannel 2 4
-	./encdec-sidechannel 3 4
-	./encdec-sidechannel 4 4
-	./encdec-sidechannel 5 4
-	./encdec-sidechannel 6 4
-	./encdec-sidechannel 0 5
-	./encdec-sidechannel 1 5
-	./encdec-sidechannel 2 5
-	./encdec-sidechannel 3 5
-	./encdec-sidechannel 4 5
-	./encdec-sidechannel 5 5
-	./encdec-sidechannel 6 5
+measure-sidechannel: sidechannel
+	./sidechannel 0 0
+	./sidechannel 1 0
+	./sidechannel 2 0
+	./sidechannel 3 0
+	./sidechannel 4 0
+	./sidechannel 5 0
+	./sidechannel 6 0
+	./sidechannel 0 1
+	./sidechannel 1 1
+	./sidechannel 2 1
+	./sidechannel 3 1
+	./sidechannel 4 1
+	./sidechannel 5 1
+	./sidechannel 6 1
+	./sidechannel 0 2
+	./sidechannel 1 2
+	./sidechannel 2 2
+	./sidechannel 3 2
+	./sidechannel 4 2
+	./sidechannel 5 2
+	./sidechannel 6 2
+	./sidechannel 0 3
+	./sidechannel 1 3
+	./sidechannel 2 3
+	./sidechannel 3 3
+	./sidechannel 4 3
+	./sidechannel 5 3
+	./sidechannel 6 3
+	./sidechannel 0 4
+	./sidechannel 1 4
+	./sidechannel 2 4
+	./sidechannel 3 4
+	./sidechannel 4 4
+	./sidechannel 5 4
+	./sidechannel 6 4
+	./sidechannel 0 5
+	./sidechannel 1 5
+	./sidechannel 2 5
+	./sidechannel 3 5
+	./sidechannel 4 5
+	./sidechannel 5 5
+	./sidechannel 6 5
 
 eckeygen: eckeygen.c
 	clang $^ -lwolfssl -o $@
 
-encdec-sidechannel: encdec-sidechannel.c
+sidechannel: sidechannel.c
 	clang $^ -lwolfssl -o $@
 
 clean:
-	rm -rf eckeygen encdec-sidechannel
+	rm -rf eckeygen sidechannel
