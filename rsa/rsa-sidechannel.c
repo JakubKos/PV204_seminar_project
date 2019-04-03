@@ -4,8 +4,8 @@
 
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/rsa.h>
-
 #include <wolfssl/wolfcrypt/random.h>
+#include <wolfssl/ssl.h>
 #include <wolfssl/wolfcrypt/asn_public.h>
 
 #define PRNG_NORMAL 0
@@ -29,10 +29,13 @@ int main(int argc, char** argv) {
         data = *argv[2] - '0';
     }
 
-    byte in[256];
-    byte out[128];
-    word32 outLen = 128;
-    word32 inLen = 256;
+    byte in[128];
+    word32 inLen = 128;
+    byte out[256];
+    word32 outLen = 256;
+
+    byte encIn[64];
+    word32 encLen = 64;
 
     FILE* r;
     if(prng != PRNG_NORMAL) {
@@ -51,7 +54,7 @@ int main(int argc, char** argv) {
         fclose(r);
     }
 
-    for(int i = 0; i < 128; i += 2) {
+    for(int i = 0; i < 64; i += 2) {
         switch(data) {
             case DATA_NORMAL: in[i] = i; in[i+1] = i+1; break;
             case DATA_0xFFFF: in[i] = 0xff; in[i+1] = 0xff; break;
@@ -61,23 +64,33 @@ int main(int argc, char** argv) {
         }
     }
 
+    for(int i = 0; i < 32; i += 2) {
+        switch(data) {
+            case DATA_NORMAL: encIn[i] = i; encIn[i+1] = i+1; break;
+            case DATA_0xFFFF: encIn[i] = 0xff; encIn[i+1] = 0xff; break;
+            case DATA_0x00FF: encIn[i] = 0x00; encIn[i+1] = 0xff; break;
+            case DATA_0x8000: encIn[i] = 0x80; encIn[i+1] = 0x00; break;
+            case DATA_0x0000: encIn[i] = 0x00; encIn[i+1] = 0x00; break;
+        }
+    }
+
     char buffer[256];
-    sprintf(buffer, "prng%ddata%dsign.txt", prng, data);
+    sprintf(buffer, "data/prng%ddata%dsign.txt", prng, data);
     FILE* fsign = fopen(buffer, "w");
 
-    sprintf(buffer, "prng%ddata%denc.txt", prng, data);
+    sprintf(buffer, "data/prng%ddata%denc.txt", prng, data);
     FILE* fenc = fopen(buffer, "w");
 
-    sprintf(buffer, "prng%ddata%ddec.txt", prng, data);
+    sprintf(buffer, "data/prng%ddata%ddec.txt", prng, data);
     FILE* fdec = fopen(buffer, "w");
 
-    sprintf(buffer, "prng%ddata%ddir.txt", prng, data);
-    FILE* fdirenc = fopen(buffer, "w");
+    /* sprintf(buffer, "data/prng%ddata%ddir.txt", prng, data); */
+    /* FILE* fdirenc = fopen(buffer, "w"); */
 
-    sprintf(buffer, "prng%ddata%ddir.txt", prng, data);
-    FILE* fdirdec = fopen(buffer, "w");
+    /* sprintf(buffer, "data/prng%ddata%ddir.txt", prng, data); */
+    /* FILE* fdirdec = fopen(buffer, "w"); */
 
-    sprintf(buffer, "prng%ddata%dmake.txt", prng, data);
+    sprintf(buffer, "data/prng%ddata%dmake.txt", prng, data);
     FILE* fmake = fopen(buffer, "w");
 
     WC_RNG rng;
@@ -91,72 +104,79 @@ int main(int argc, char** argv) {
     wc_InitRsaKey(&keyB, NULL);
 
     // MAKE
-    for(int i = 0; i < 1000; ++i) {
-        clock_t begin = clock();
-        if(wc_MakeRsaKey(&keyB, 2048, 65537, &rng) != 0)
-            return 1;
-        clock_t end = clock();
-        long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
-        fprintf(fmake, "%ld\n", elapsed_microsecs);
-    }
+    /* for(int i = 0; i < 1000; ++i) { */
+    /*     clock_t begin = clock(); */
+    /*     if(wc_MakeRsaKey(&keyB, 2048, 65537, &rng) != 0) */
+    /*         return 1; */
+    /*     clock_t end = clock(); */
+    /*     long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC); */
+    /*     fprintf(fmake, "%ld\n", elapsed_microsecs); */
+    /* } */
 
     // SIGNING
-    for(int i = 0; i < 1000; ++i) {
-        clock_t begin = clock();
-        if(wc_RsaSSL_Sign(in, inLen, out, outLen, &key, &rng) != 0)
-            return 1;
-        clock_t end = clock();
-        long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
-        fprintf(fsign, "%ld\n", elapsed_microsecs);
-    }
+    /* int ret, digLen; */
+    /* for(int i = 0; i < 1000; ++i) { */
+    /*     clock_t begin = clock(); */
+    /*     digLen = wc_RsaSSL_Sign(in, inLen, out, outLen, &key, &rng); */
+    /*     clock_t end = clock(); */
+    /*     ret = wc_RsaSSL_Verify(out, outLen, in, inLen, &key); */
+    /*     if (ret < 0 || digLen < 0) { */
+    /*         fprintf(stderr, "FAILED: ret = %d, dig = %d\n", ret, digLen); */
+    /*         continue; */
+    /*     } */
+    /*     long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC); */
+    /*     fprintf(fsign, "%ld\n", elapsed_microsecs); */
+    /* } */
 
     // ENCRYPT/DECRYPT
+    int ret;
     for(int i = 0; i < 1000; ++i) {
         {
             clock_t begin = clock();
-            if(wc_RsaPublicEncrypt(in, inLen, out, outLen, &key, &rng) != 0)
-                return 2;
+            ret = wc_RsaPublicEncrypt(encIn, encLen, out, outLen, &key, &rng);
+            /* for (int i = 0; i < outLen ; ++i) */
+            /*     fprintf(stdout, " %02x", out[i]); */
             clock_t end = clock();
             long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
             fprintf(fenc, "%ld\n", elapsed_microsecs);
         }
 
-        {
-            clock_t begin = clock();
-            if(wc_RsaPrivateDecrypt(out, outLen, in, inLen, &key) != 0)
-                return 2;
-            clock_t end = clock();
-            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
-            fprintf(fdec, "%ld\n", elapsed_microsecs);
-        }
+        /* { */
+        /*     clock_t begin = clock(); */
+        /*     ret = wc_RsaPrivateDecrypt(out, outLen, encIn, encLen, &key); */
+        /*     fprintf(stdout, "FAILED: ret = %d\n", ret); */
+        /*     clock_t end = clock(); */
+        /*     long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC); */
+        /*     fprintf(fdec, "%ld\n", elapsed_microsecs); */
+        /* } */
     }
 
     // ENCRYPT/DECRYPT without padding
-//    for(int i = 0; i < 1000; ++i) {
-//        {
-//            clock_t begin = clock();
-//            if(wc_RsaDirect(in, inLen, out, &outLen, &key, 2, &rng) != 0)
-//                return 2;
-//            clock_t end = clock();
-//            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
-//            fprintf(fdirenc, "%ld\n", elapsed_microsecs);
-//        }
-//
-//        {
-//            clock_t begin = clock();
-//            if(wc_RsaDirect(out, outLen, in, &inLen, &key, 3, &rng) != 0)
-//                return 2;
-//            clock_t end = clock();
-//            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
-//            fprintf(fdirdec, "%ld\n", elapsed_microsecs);
-//        }
-//    }
+    /* for(int i = 0; i < 1000; ++i) { */
+    /*     { */
+    /*         clock_t begin = clock(); */
+    /*         if(wc_RsaDirect(in, inLen, out, &outLen, &key, 2, &rng) != 0) */
+    /*             return 4; */
+    /*         clock_t end = clock(); */
+    /*         long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC); */
+    /*         fprintf(fdirenc, "%ld\n", elapsed_microsecs); */
+    /*     } */
+    /*  */
+    /*     { */
+    /*         clock_t begin = clock(); */
+    /*         if(wc_RsaDirect(out, outLen, in, &inLen, &key, 3, &rng) != 0) */
+    /*             return 5; */
+    /*         clock_t end = clock(); */
+    /*         long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC); */
+    /*         fprintf(fdirdec, "%ld\n", elapsed_microsecs); */
+    /*     } */
+    /* } */
 
     fclose(fsign);
     fclose(fenc);
     fclose(fdec);
-    fclose(fdirenc);
-    fclose(fdirdec);
+    /* fclose(fdirenc); */
+    /* fclose(fdirdec); */
     fclose(fmake);
     return 0;
 }
