@@ -100,6 +100,8 @@ int main(int argc, char** argv) {
     FILE* fdec = fopen(buffer, "w");
     sprintf(buffer, "prng%ddata%dsig.txt", prng, data);
     FILE* fsig = fopen(buffer, "w");
+    sprintf(buffer, "prng%ddata%dmak.txt", prng, data);
+    FILE* fmak = fopen(buffer, "w");
 
     WC_RNG rng;
     wc_InitRng(&rng);
@@ -111,6 +113,9 @@ int main(int argc, char** argv) {
     ecc_key keyB;
     wc_ecc_init(&keyB);
     wc_ecc_make_key_ex(&rng, 32, &keyB, ECC_SECP256R1);
+
+    ecc_key keyC;
+    wc_ecc_init(&keyC);
 
     setup_prng(prng, 0);
 
@@ -144,11 +149,22 @@ int main(int argc, char** argv) {
             long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
             fprintf(fsig, "%ld\n", elapsed_microsecs);
         }
+
+	{
+	    clock_t begin = clock();
+	    if(wc_ecc_make_key_ex(&rng, 32, &keyC, ECC_SECP256R1) != 0)
+		return 4;
+	    clock_t end = clock();
+	    long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
+	    fprintf(fmak, "%ld\n", elapsed_microsecs);
+	}
     }
 
     fclose(fsig);
     fclose(fdec);
     fclose(fenc);
+    fclose(fmak);
+
     return 0;
 }
 
