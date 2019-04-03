@@ -157,6 +157,7 @@ int main(int argc, char** argv) {
     fclose(fdec);
     fclose(fdirenc);
     fclose(fdirdec);
+    fclose(fmake);
     return 0;
 }
 
