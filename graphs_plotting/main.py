@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 
-def show_graph(path, bins):
+def show_graph(path, bins, ecc):
     """
     Plot histogram.
     :param values: values to be plotted
@@ -14,30 +14,32 @@ def show_graph(path, bins):
     :return: None
     """
     values = []
-    min_value = 5555555555
-    max_value = -55555555555
+
     with open(path, 'r') as file:
         for line in file:
-            if int(line) < min_value:
-                min_value = int(line)
-            if int(line) > max_value:
-                max_value = int(line)
             values.append(int(line))
+
+    values.sort()
+    values = values[5:-5]
 
     labelX = 'Time to evaluate function call (microseconds)'
     labelY = 'Number of occurences'
-    plotName = get_function_name(path) + get_prng(path) + get_data(path)
+    if ecc:
+        plotName = get_function_name_ecc(path) + get_prng(path) + get_data(path)
+    else:
+        plotName = get_function_name(path) + get_prng(path) + get_data(path)
 
-    plt.hist(values, bins=bins, range=(min_value, max_value), edgecolor='black')
+    plt.hist(values, bins=bins, range=(values[0], values[-1]), edgecolor='black')
     plt.xlabel(labelX)
     plt.ylabel(labelY)
     plt.title(plotName)
     plt.xticks()
     print('Saving graph ' + os.path.splitext(path)[0])
     plt.savefig(os.path.splitext(path)[0] + '.png', bbox_inches='tight')
+    plt.close()
 
 
-def get_function_name(argument):
+def get_function_name_ecc(argument):
     if argument.endswith("dec.txt"):
         return 'wc_ecc_decrypt()'
 
@@ -46,6 +48,20 @@ def get_function_name(argument):
 
     if argument.endswith("sig.txt"):
         return 'wc_ecc_sign_hash()'
+
+    if argument.endswith("mak.txt"):
+        return 'wc_ecc_make_key_ex()'
+
+
+def get_function_name_rsa(argument):
+    if argument.endswith("dec.txt"):
+        return 'wc_RsaPrivateDecrypt_ex()'
+
+    if argument.endswith("enc.txt"):
+        return 'wc_RsaPublicEncrypt_ex()'
+
+    if argument.endswith("sign.txt"):
+        return 'wc_RsaSSL_Sign'
 
     if argument.endswith("mak.txt"):
         return 'wc_ecc_make_key_ex()'
@@ -96,7 +112,9 @@ def get_data(argument):
 
 if __name__ == '__main__':
 
-    directory = '/home/kubo/Documents/Magisterske_studium/PV204/project/PV204_seminar_project/ec/measurement/'
+    directory_ec = '/home/kubo/Documents/Magisterske_studium/PV204/project/PV204_seminar_project/ec/measurement/'
+    directory_rsa = ''
     for file in os.listdir(directory):
-        show_graph(directory + file, None)
-        show_graph(directory + file, 500)
+        if file.endswith('.txt'):
+            # show_graph(directory_ec + file, 35, True)
+            show_graph(directory_rsa + file, 35, False)
