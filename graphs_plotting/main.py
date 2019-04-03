@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 import csv
+import numpy as np
+import os
 
 
-def show_graph(values, label, bins, rang):
+def show_graph(path, bins):
     """
     Plot histogram.
     :param values: values to be plotted
@@ -11,178 +13,90 @@ def show_graph(values, label, bins, rang):
     :param rang: plotted range
     :return: None
     """
-    plt.hist(values, bins=bins, range=rang)
-    plt.xlabel(label)
-    plt.show()
+    values = []
+    min_value = 5555555555
+    max_value = -55555555555
+    with open(path, 'r') as file:
+        for line in file:
+            if int(line) < min_value:
+                min_value = int(line)
+            if int(line) > max_value:
+                max_value = int(line)
+            values.append(int(line))
+
+    labelX = 'Time to evaluate function call (microseconds)'
+    labelY = 'Number of occurences'
+    plotName = get_function_name(path) + get_prng(path) + get_data(path)
+
+    plt.hist(values, bins=bins, range=(min_value, max_value), edgecolor='black')
+    plt.xlabel(labelX)
+    plt.ylabel(labelY)
+    plt.title(plotName)
+    plt.xticks()
+    print('Saving graph ' + os.path.splitext(path)[0])
+    plt.savefig(os.path.splitext(path)[0] + '.png', bbox_inches='tight')
 
 
-def prepare_data(path, start_index, stop_index, row_index):
-    """
-        Extract data from from given CSV.
-        :param row_index: row index of data which we want to parse
-        :param stop_index: start index of data which we want to parse
-        :param start_index:  end index of data which we want to parse
-        :param path: path to the CSV file
-        :return: extracted data
-        """
-    data = []
+def get_function_name(argument):
+    if argument.endswith("dec.txt"):
+        return 'wc_ecc_decrypt()'
 
-    # open csv and parse desired values to array
-    with open(path, 'r') as csvfile:
-        plots = csv.reader(csvfile, delimiter=';')
-        for row in plots:
-            data.append(int(row[row_index].replace(':', '')[start_index:stop_index], 16))
+    if argument.endswith("enc.txt"):
+        return 'wc_ecc_encrypt()'
 
-    return data
+    if argument.endswith("sig.txt"):
+        return 'wc_ecc_sign_hash()'
+
+    if argument.endswith("mak.txt"):
+        return 'wc_ecc_make_key_ex()'
 
 
-def prepare_ecc_priv_times(path):
-    """
-    Extract time from priv key given in CSV.
-    :param path: path to the CSV file
-    :return: extracted data
-    """
-    times = []
+def get_prng(argument):
+    if 'prng0' in argument:
+        return ' • PRNG: default generator'
 
-    # open csv and parse desired values to array
-    with open(path, 'r') as csvfile:
-        plots = csv.reader(csvfile, delimiter=';')
-        for row in plots:
-            times.append(int(row[3], 10)/1000)
+    if 'prng1' in argument:
+        return ' • PRNG: all ones'
 
-    return times
+    if 'prng2' in argument:
+        return ' • PRNG: repeating pattern 0x00FF'
+
+    if 'prng3' in argument:
+        return ' • PRNG: repeating pattern 0xAAAA (101010)'
+
+    if 'prng4' in argument:
+        return ' • PRNG: repeating pattern 0x8000 (one 1 31*0 after that)'
+
+    if 'prng5' in argument:
+        return ' • PRNG: all 0, lowest bit 1'
+
+    if 'prng6' in argument:
+        return ' • PRNG: all 0, highest bit 1'
 
 
-def prepare_rsa_times(path):
-    """
-    Extract time from rsa keys given in CSV.
-    :param path: path to the CSV file
-    :return: extracted data
-    """
-    times = []
+def get_data(argument):
+    if 'data0' in argument:
+        return ' • DATA: 1 to 255'
 
-    # open csv and parse desired values to array
-    with open(path, 'r') as csvfile:
-        plots = csv.reader(csvfile, delimiter=';')
-        for row in plots:
-            times.append(int(row[6], 10)/1000000)
+    if 'data1' in argument:
+        return ' • DATA: all ones'
 
-    return times
+    if 'data2' in argument:
+        return ' • DATA: repeating pattern 0x00FF'
+
+    if 'data3' in argument:
+        return ' • DATA: repeating pattern 0xAAAA (101010)'
+
+    if 'data4' in argument:
+        return ' • DATA: repeating pattern 0x8000 (one 1 31*0 after that)'
+
+    if 'data5' in argument:
+        return ' • DATA: all 0'
 
 
 if __name__ == '__main__':
-    # ECC MSB X
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 2, 4, 1),
-               'MSB of point X', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 2, 4, 1),
-               'MSB of point X', None, None)
 
-    # ECC LSB X
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 64, 66, 1),
-               'LSB of point X', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 64, 66, 1),
-               'LSB of point X', None, None)
-
-    # ECC MSB Y
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 66, 68, 1),
-               'MSB of point Y', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 66, 68, 1),
-               'MSB of point Y', None, None)
-
-    # ECC LSB Y
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', -2, None, 1),
-               'LSB of point Y', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', -2, None, 1),
-               'LSB of point Y', None, None)
-
-    # ECC MSB k
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 0, 2, 2),
-               'MSB of k', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', 0, 2, 2),
-               'MSB of k', None, None)
-
-    # ECC LSB k
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', -2, None, 2),
-               'LSB of k', 500, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv', -2, None, 2),
-               'LSB of k', None, None)
-
-    # ECC TIMES
-    show_graph(prepare_ecc_priv_times('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv'),
-               'Time to generate key (microseconds)', None, None)
-    show_graph(prepare_ecc_priv_times('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv'),
-               'Time to generate key (microseconds)', 500, None)
-    show_graph(prepare_ecc_priv_times('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv'),
-               'Time to generate key (microseconds)', None, (840, 990))
-    show_graph(prepare_ecc_priv_times('/home/kubo/Documents/Magisterske_studium/PV204/zing/eckeys.csv'),
-               'Time to generate key (microseconds)', 300, (840, 990))
-
-    # -----------------------------------------------------------------------------------------------------------------
-
-    # RSA 512 P prime MSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv', 2, 4, 3), 'MSB P', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv', 2, 4 ,3), 'MSB P', None, None)
-
-    # RSA 512 Q prime MSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv', 2, 4, 4), 'MSB Q', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv', 2, 4, 4), 'MSB Q', None, None)
-
-    # RSA 512 P prime LSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv', -2, None, 3), 'LSB P', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv', -2, None, 3), 'LSB P', None, None)
-
-    # RSA 512 Q prime LSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv', -2, None, 4), 'LSB Q', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv', -2, None, 4), 'LSB Q', None, None)
-
-    # RSA 512 times
-    show_graph(prepare_rsa_times('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv'), 'Time to generate key (miliseconds)', None, None)
-    show_graph(prepare_rsa_times('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv'), 'Time to generate key (miliseconds)', 500, None)
-    show_graph(prepare_rsa_times('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv'), 'Time to generate key (miliseconds)', None, (0,45))
-    show_graph(prepare_rsa_times('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-512-fin.csv'), 'Time to generate key (miliseconds)', 300, (0,45))
-
-    # -----------------------------------------------------------------------------------------------------------------
-
-    # RSA 1024 P prime MSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv', 2, 4, 3), 'MSB P', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv', 2, 4, 3), 'MSB P', None, None)
-
-    # RSA 1024 Q prime MSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv', 2, 4, 4), 'MSB Q', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv', 2, 4, 4), 'MSB Q', None, None)
-
-    # RSA 1024 P prime LSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv', -2, None, 3), 'LSB P', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv', -2, None, 3), 'LSB P', None, None)
-
-    # RSA 1024 Q prime LSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv', -2, None, 4), 'LSB Q', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv', -2, None, 4), 'LSB Q', None, None)
-
-    # RSA 1024 times
-    show_graph(prepare_rsa_times('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv'), 'Time to generate key (miliseconds)', None, None)
-    show_graph(prepare_rsa_times('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-1024-fin.csv'), 'Time to generate key (miliseconds)', 500, None)
-
-    # -----------------------------------------------------------------------------------------------------------------
-
-    # RSA 2048 P prime MSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv', 2, 4, 3), 'MSB P', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv', 2, 4, 3), 'MSB P', None, None)
-
-    # RSA 2048 Q prime MSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv', 2, 4, 4), 'MSB Q', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv', 2, 4, 4), 'MSB Q', None, None)
-
-    # RSA 2048 P prime LSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv', -2, None, 3), 'LSB P', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv', -2, None, 3), 'LSB P', None, None)
-
-    # RSA 2048 Q prime LSB
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv', -2, None, 4), 'LSB Q', 250, None)
-    show_graph(prepare_data('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv', -2, None, 4), 'LSB Q', None, None)
-
-    # RSA 2048 times
-    show_graph(prepare_rsa_times('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv'), 'Time to generate key (miliseconds)', None, None)
-    show_graph(prepare_rsa_times('/home/kubo/Documents/Magisterske_studium/PV204/project/rsatimes/rsatimes-2048-fin.csv'), 'Time to generate key (miliseconds)', 500, None)
-
-
+    directory = '/home/kubo/Documents/Magisterske_studium/PV204/project/PV204_seminar_project/ec/measurement/'
+    for file in os.listdir(directory):
+        show_graph(directory + file, None)
+        show_graph(directory + file, 500)
