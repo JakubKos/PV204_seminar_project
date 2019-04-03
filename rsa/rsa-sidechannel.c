@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
     FILE* r;
     if(prng != PRNG_NORMAL) {
-        setenv("CUSTOM_RNG", "1", 0);
+        setenv("CUSTOM_RNG", "0", 0);
         r = fopen("/tmp/random", "wb");
     }
 
@@ -81,8 +81,8 @@ int main(int argc, char** argv) {
     sprintf(buffer, "data/prng%ddata%denc.txt", prng, data);
     FILE* fenc = fopen(buffer, "w");
 
-    sprintf(buffer, "data/prng%ddata%ddec.txt", prng, data);
-    FILE* fdec = fopen(buffer, "w");
+    /* sprintf(buffer, "data/prng%ddata%ddec.txt", prng, data); */
+    /* FILE* fdec = fopen(buffer, "w"); */
 
     /* sprintf(buffer, "data/prng%ddata%ddir.txt", prng, data); */
     /* FILE* fdirenc = fopen(buffer, "w"); */
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
     wc_InitRsaKey(&keyB, NULL);
 
     // MAKE
-    /* for(int i = 0; i < 1000; ++i) { */
+    /* for(int i = 0; i < 1; ++i) { */
     /*     clock_t begin = clock(); */
     /*     if(wc_MakeRsaKey(&keyB, 2048, 65537, &rng) != 0) */
     /*         return 1; */
@@ -112,67 +112,54 @@ int main(int argc, char** argv) {
     /*     long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC); */
     /*     fprintf(fmake, "%ld\n", elapsed_microsecs); */
     /* } */
+    /* fprintf(stdout, "MAKE - DONE\n"); */
 
     // SIGNING
     int ret, digLen;
-    /* for(int i = 0; i < 1000; ++i) { */
-    /*     clock_t begin = clock(); */
-    /*     digLen = wc_RsaSSL_Sign(in, inLen, out, outLen, &key, &rng); */
-    /*     clock_t end = clock(); */
-    /*     ret = wc_RsaSSL_Verify(out, outLen, in, inLen, &key); */
-    /*     if (ret < 0 || digLen < 0) { */
-    /*         fprintf(stderr, "FAILED: ret = %d, dig = %d\n", ret, digLen); */
-    /*         continue; */
-    /*     } */
-    /*     long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC); */
-    /*     fprintf(fsign, "%ld\n", elapsed_microsecs); */
-    /* } */
-
-    // ENCRYPT/DECRYPT
-    byte decOut[16];
-    word32 decLen = 16;
-    for(int i = 0; i < 16; ++i){
-        decOut[i] = 0x00;
+    for(int i = 0; i < 1000; ++i) {
+        clock_t begin = clock();
+        digLen = wc_RsaSSL_Sign(in, inLen, out, outLen, &key, &rng);
+        clock_t end = clock();
+        ret = wc_RsaSSL_Verify(out, outLen, in, inLen, &key);
+        if (ret < 0 || digLen < 0) {
+            fprintf(stderr, "FAILED: ret = %d, dig = %d\n", ret, digLen);
+            continue;
+        }
+        long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
+        fprintf(fsign, "%ld\n", elapsed_microsecs);
     }
+    fprintf(stdout, "SIGN - DONE\n");
 
     for(int i = 0; i < 1000; ++i) {
 
-        fprintf(stdout, "PLAIN: ");
-        for (int i = 0; i < encLen ; ++i)
-            fprintf(stdout, " %02x", encIn[i]);
-        fprintf(stdout, "\n");
-
         {
             clock_t begin = clock();
-            ret = wc_RsaPublicEncrypt_ex(encIn, encLen, out, outLen, &key, &rng,0, 0,0,NULL, 0);
-            /* ret = wc_RsaPublicEncrypt(encIn, encLen, out, outLen, &key, &rng); */
-            /* for (int i = 0; i < outLen ; ++i) */
-            /*     fprintf(stdout, " %02x", out[i]); */
+            ret = wc_RsaPublicEncrypt(encIn, encLen, out, outLen, &key, &rng);
             clock_t end = clock();
             long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
             fprintf(fenc, "%ld\n", elapsed_microsecs);
         }
 
-        fprintf(stdout, "ENCRYPTED: ");
-        for (int i = 0; i < outLen ; ++i)
-            fprintf(stdout, " %02x", out[i]);
-        fprintf(stdout, "\n");
+        /* fprintf(stdout, "ENCRYPTED: "); */
+        /* for (int i = 0; i < outLen ; ++i) */
+        /*     fprintf(stdout, " %02x", out[i]); */
+        /* fprintf(stdout, "\n"); */
 
-        {
-            clock_t begin = clock();
-            ret = wc_RsaPrivateDecrypt_ex(out, outLen, decOut, decLen, &key, 0, 0, 0, NULL, 0);
-            /* ret = wc_RsaPrivateDecrypt(out, outLen, decOut, decLen, &key); */
-            clock_t end = clock();
-            fprintf(stdout, "DECRYPT: ");
-            for (int i = 0; i < decLen ; ++i)
-                fprintf(stdout, " %02x", decOut[i]);
-            fprintf(stdout, "\n");
-            fprintf(stdout, "FAILED: ret = %d\n", ret);
-            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
-            fprintf(fdec, "%ld\n", elapsed_microsecs);
-        }
-        return 0;
+        /* { */
+        /*     clock_t begin = clock(); */
+        /*     ret = wc_RsaPrivateDecrypt_ex(out, outLen, decOut, decLen, &key, 0, 0, 0, NULL, 0); */
+        /*     #<{(| ret = wc_RsaPrivateDecrypt(out, outLen, decOut, decLen, &key); |)}># */
+        /*     clock_t end = clock(); */
+        /*     fprintf(stdout, "DECRYPT: "); */
+        /*     for (int i = 0; i < decLen ; ++i) */
+        /*         fprintf(stdout, " %02x", decOut[i]); */
+        /*     fprintf(stdout, "\n"); */
+        /*     fprintf(stdout, "FAILED: ret = %d\n", ret); */
+        /*     long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC); */
+        /*     fprintf(fdec, "%ld\n", elapsed_microsecs); */
+        /* } */
     }
+    fprintf(stdout, "ENC - DONE\n");
 
     // ENCRYPT/DECRYPT without padding
     /* for(int i = 0; i < 1000; ++i) { */
@@ -197,7 +184,7 @@ int main(int argc, char** argv) {
 
     fclose(fsign);
     fclose(fenc);
-    fclose(fdec);
+    /* fclose(fdec); */
     /* fclose(fdirenc); */
     /* fclose(fdirdec); */
     fclose(fmake);
