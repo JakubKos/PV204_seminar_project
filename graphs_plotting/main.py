@@ -27,7 +27,7 @@ def show_graph(path, bins, ecc):
     if ecc:
         plotName = get_function_name_ecc(path) + get_prng(path) + get_data(path)
     else:
-        plotName = get_function_name(path) + get_prng(path) + get_data(path)
+        plotName = get_function_name_rsa(path) + get_prng(path) + get_data(path)
 
     plt.hist(values, bins=bins, range=(values[0], values[-1]), edgecolor='black')
     plt.xlabel(labelX)
@@ -63,8 +63,8 @@ def get_function_name_rsa(argument):
     if argument.endswith("sign.txt"):
         return 'wc_RsaSSL_Sign'
 
-    if argument.endswith("mak.txt"):
-        return 'wc_ecc_make_key_ex()'
+    if argument.endswith("make.txt"):
+        return 'wc_MakeRsaKey()'
 
 
 def get_prng(argument):
@@ -113,8 +113,8 @@ def get_data(argument):
 if __name__ == '__main__':
 
     directory_ec = '/home/kubo/Documents/Magisterske_studium/PV204/project/PV204_seminar_project/ec/measurement/'
-    directory_rsa = ''
-    for file in os.listdir(directory):
+    directory_rsa = '/home/jakub/Documents/PV204_seminar_project/rsa/data/'
+    for file in os.listdir(directory_rsa):
         if file.endswith('.txt'):
             # show_graph(directory_ec + file, 35, True)
             show_graph(directory_rsa + file, 35, False)
