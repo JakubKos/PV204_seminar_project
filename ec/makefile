@@ -1,4 +1,4 @@
-all: eckeygen sidechannel
+all: eckeygen sidechannel heatchannel
 
 measure-sidechannel: sidechannel
 	./sidechannel 0 0
@@ -50,5 +50,8 @@ eckeygen: eckeygen.c
 sidechannel: sidechannel.c
 	clang $^ -lwolfssl -o $@
 
+heatchannel: heatchannel.c
+	clang $^ -lwolfssl -o $@
+
 clean:
-	rm -rf eckeygen sidechannel
+	rm -rf eckeygen sidechannel heatchannel
