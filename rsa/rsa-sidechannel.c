@@ -77,12 +77,28 @@ int main(int argc, char** argv) {
     sprintf(buffer, "prng%ddata%ddir.txt", prng, data);
     FILE* fdirdec = fopen(buffer, "w");
 
+    sprintf(buffer, "prng%ddata%dmake.txt", prng, data);
+    FILE* fmake = fopen(buffer, "w");
+
     WC_RNG rng;
     wc_InitRng(&rng);
 
     RsaKey key;
     wc_InitRsaKey(&key, NULL);
     wc_MakeRsaKey(&key, 2048, 65537, &rng);
+
+    RsaKey keyB;
+    wc_InitRsaKey(&keyB, NULL);
+
+    // MAKE
+    for(int i = 0; i < 1000; ++i) {
+        clock_t begin = clock();
+        if(wc_MakeRsaKey(&keyB, 2048, 65537, &rng) != 0)
+            return 1;
+        clock_t end = clock();
+        long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
+        fprintf(fmake, "%ld\n", elapsed_microsecs);
+    }
 
     // SIGNING
     for(int i = 0; i < 1000; ++i) {
@@ -116,25 +132,25 @@ int main(int argc, char** argv) {
     }
 
     // ENCRYPT/DECRYPT without padding
-    for(int i = 0; i < 1000; ++i) {
-        {
-            clock_t begin = clock();
-            if(wc_RsaDirect(in, inLen, out, &outLen, &key, 2, &rng) != 0)
-                return 2;
-            clock_t end = clock();
-            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
-            fprintf(fdirenc, "%ld\n", elapsed_microsecs);
-        }
-
-        {
-            clock_t begin = clock();
-            if(wc_RsaDirect(out, outLen, in, &inLen, &key, 3, &rng) != 0)
-                return 2;
-            clock_t end = clock();
-            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
-            fprintf(fdirdec, "%ld\n", elapsed_microsecs);
-        }
-    }
+//    for(int i = 0; i < 1000; ++i) {
+//        {
+//            clock_t begin = clock();
+//            if(wc_RsaDirect(in, inLen, out, &outLen, &key, 2, &rng) != 0)
+//                return 2;
+//            clock_t end = clock();
+//            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
+//            fprintf(fdirenc, "%ld\n", elapsed_microsecs);
+//        }
+//
+//        {
+//            clock_t begin = clock();
+//            if(wc_RsaDirect(out, outLen, in, &inLen, &key, 3, &rng) != 0)
+//                return 2;
+//            clock_t end = clock();
+//            long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
+//            fprintf(fdirdec, "%ld\n", elapsed_microsecs);
+//        }
+//    }
 
     fclose(fsign);
     fclose(fenc);
