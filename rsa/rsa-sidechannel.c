@@ -3,7 +3,8 @@
 #include <stdio.h>
 
 #include <wolfssl/options.h>
-#include <wolfssl/wolfcrypt/ecc.h>
+#include <wolfssl/wolfcrypt/rsa.h>
+
 #include <wolfssl/wolfcrypt/random.h>
 #include <wolfssl/wolfcrypt/asn_public.h>
 
@@ -86,7 +87,7 @@ int main(int argc, char** argv) {
     // SIGNING
     for(int i = 0; i < 1000; ++i) {
         clock_t begin = clock();
-        if(wc_RsaSSL_Sign(in, inLen, out, outLen, &key, &rng); != 0)
+        if(wc_RsaSSL_Sign(in, inLen, out, outLen, &key, &rng) != 0)
             return 1;
         clock_t end = clock();
         long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
@@ -118,7 +119,7 @@ int main(int argc, char** argv) {
     for(int i = 0; i < 1000; ++i) {
         {
             clock_t begin = clock();
-            if(wc_RsaDirect(in, inLen, out, &outLen, &key, RSA_PRIVATE_ENCRYPT, &rng) != 0)
+            if(wc_RsaDirect(in, inLen, out, &outLen, &key, 2, &rng) != 0)
                 return 2;
             clock_t end = clock();
             long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
@@ -127,7 +128,7 @@ int main(int argc, char** argv) {
 
         {
             clock_t begin = clock();
-            if(wc_RsaDirect(out, outLen, in, &inLen, &key, RSA_PRIVATE_DECRYPT, &rng) != 0)
+            if(wc_RsaDirect(out, outLen, in, &inLen, &key, 3, &rng) != 0)
                 return 2;
             clock_t end = clock();
             long elapsed_microsecs = (end - begin) * (1000000 / CLOCKS_PER_SEC);
