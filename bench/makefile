@@ -1,7 +1,7 @@
 all: bench
 
-bench: main.c
-	$(CC) -std=c99 -o $@ $^ -lwolfssl
+bench: main.cpp
+	$(CXX) -std=c++17 -o $@ $^ -lwolfssl
 
 clean:
 	rm -rf bench
