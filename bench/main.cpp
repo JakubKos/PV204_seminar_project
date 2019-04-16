@@ -228,7 +228,7 @@ void init() {
         },
         1024,
         64,
-        "RSA verify, 2048b key",
+        "RSA verify, 512b key",
         "KB"
     };
 
