@@ -2,6 +2,7 @@
 #include <map>
 #include <string>
 #include <optional>
+#include <iostream>
 
 extern "C" {
 #include <wolfssl/options.h>
@@ -62,6 +63,11 @@ byte decECC[160];
 word32 decECCLen = 160;
 word32 sigLen = 512;
 
+byte enc64[64];
+byte enc128[128];
+byte enc256[256];
+byte dec[128];
+
 ecc_key eccKey, eccKeyA, eccKeyB;
 int ret;
 
@@ -80,12 +86,17 @@ void init() {
     wc_MakeRsaKey(&rsaKey512, 512, e, &rng);
     wc_MakeRsaKey(&rsaKey1024, 1024, e, &rng);
     wc_MakeRsaKey(&rsaKey2048, 2048, e, &rng);
+    wc_RsaSetRNG(&rsaKey512, &rng);
+    wc_RsaSetRNG(&rsaKey1024, &rng);
+    wc_RsaSetRNG(&rsaKey2048, &rng);
 
     // RSA - signing & encrypt
     wc_RsaSSL_Sign(in, 32, sign64, 64, &rsaKey512, &rng);
     wc_RsaSSL_Sign(in, 64, sign128, 128, &rsaKey1024, &rng);
     wc_RsaSSL_Sign(in, 128, sign256, 256, &rsaKey2048, &rng);
-    // encrypt - TODO
+    wc_RsaPublicEncrypt(in, 128, enc256, 256, &rsaKey2048, &rng);
+    wc_RsaPublicEncrypt(in, 64, enc128, 128, &rsaKey1024, &rng);
+    wc_RsaPublicEncrypt(in, 32, enc64, 64, &rsaKey512, &rng);
 
     // ECC - init & make
     wc_ecc_init(&eccKey);
@@ -111,13 +122,13 @@ void init() {
         "MB"
     };
 
-    benches["ec make key"] = {
+    benches["ec_make_key"] = {
         [](){
             wc_ecc_make_key_ex(&rng, 32, &eccKey, ECC_SECP256R1);
         },
         1024,
         1024,
-        "ECC make key 32b",
+        "ECC_make_key",
         ""
     };
 
@@ -162,7 +173,7 @@ void init() {
         "KB"
     };
 
-    benches["RSA_512b"] = {
+    benches["RSA_512"] = {
         [](){
             wc_MakeRsaKey(&rsaKey, 512, e, &rng);
         },
@@ -182,7 +193,7 @@ void init() {
         ""
     };
 
-    benches["RSA_2048"] = {
+    benches["RSA_2048b"] = {
         [](){
             wc_MakeRsaKey(&rsaKey, 2048, e, &rng);
         },
@@ -192,7 +203,7 @@ void init() {
         ""
     };
 
-    benches["RSA signature 512"] = {
+    benches["RSA_signature_512"] = {
         [](){
             wc_RsaSSL_Sign(in, 32, sign64, 64, &rsaKey512, &rng);
         },
@@ -202,7 +213,7 @@ void init() {
         "KB"
     };
 
-    benches["RSA signature 1024"] = {
+    benches["RSA_signature_1024"] = {
         [](){
             wc_RsaSSL_Sign(in, 64, sign128, 128, &rsaKey1024, &rng);
         },
@@ -212,7 +223,7 @@ void init() {
         "KB"
     };
 
-    benches["RSA signature 2048"] = {
+    benches["RSA_signature_2048"] = {
         [](){
             wc_RsaSSL_Sign(in, 128, sign256, 256, &rsaKey2048, &rng);
         },
@@ -222,7 +233,7 @@ void init() {
         "KB"
     };
 
-    benches["RSA verify 512"] = {
+    benches["RSA_verify_512"] = {
         [](){
             wc_RsaSSL_Verify(sign64, 64, in, 32, &rsaKey512);
         },
@@ -232,7 +243,7 @@ void init() {
         "KB"
     };
 
-    benches["RSA verify 1024"] = {
+    benches["RSA_verify_1024"] = {
         [](){
             wc_RsaSSL_Verify(sign128, 128, in, 64, &rsaKey1024);
         },
@@ -242,13 +253,86 @@ void init() {
         "KB"
     };
 
-    benches["RSA verify 2048"] = {
+    benches["RSA_verify_2048"] = {
         [](){
             wc_RsaSSL_Verify(sign256, 256, in, 128, &rsaKey2048);
         },
         1024,
         256,
         "RSA verify, 2048b key",
+        "KB"
+    };
+
+    benches["RSA_encrypt_2048"] = {
+        [](){
+            wc_RsaSSL_Verify(sign256, 256, in, 128, &rsaKey2048);
+        },
+        1024,
+        256,
+        "RSA encrypt, 2048b key",
+        "KB"
+    };
+
+    benches["RSA_encrypt_512"] = {
+        [](){
+            wc_RsaPublicEncrypt(in, 32, enc64, 64, &rsaKey512, &rng);
+        },
+        1024,
+        32,
+        "RSA encrypt, 512b key",
+        "KB"
+    };
+
+    benches["RSA_encrypt_1024"] = {
+        [](){
+            wc_RsaPublicEncrypt(in, 64, enc128, 128, &rsaKey1024, &rng);
+        },
+        1024,
+        64,
+        "RSA encrypt, 1024b key",
+        "KB"
+    };
+
+    benches["RSA_encrypt_2048"] = {
+        [](){
+            wc_RsaPublicEncrypt(in, 128, enc256, 256, &rsaKey2048, &rng);
+        },
+        1024,
+        128,
+        "RSA encrypt, 2048b key",
+        "KB"
+    };
+
+    benches["RSA_decrypt_512"] = {
+        [](){
+            ret = wc_RsaPrivateDecrypt(enc64, 64, dec, 32, &rsaKey512);
+            // std::cout << ret << std::endl;
+        },
+        1024,
+        64,
+        "RSA decrypt, 512b key",
+        "KB"
+    };
+
+    benches["RSA_decrypt_1024"] = {
+        [](){
+            ret = wc_RsaPrivateDecrypt(enc128, 128, dec, 64, &rsaKey1024);
+            // std::cout << ret << std::endl;
+        },
+        1024,
+        128,
+        "RSA decrypt, 1024b key",
+        "KB"
+    };
+
+    benches["RSA_decrypt_2048"] = {
+        [](){
+            ret = wc_RsaPrivateDecrypt(enc256, 256, dec, 128, &rsaKey2048);
+            // std::cout << ret << std::endl;
+        },
+        1024,
+        256,
+        "RSA decrypt, 2048b key",
         "KB"
     };
 }
