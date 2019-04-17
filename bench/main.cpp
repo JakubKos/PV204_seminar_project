@@ -40,19 +40,24 @@ public:
         return *(time = (end - begin) * (1000000 / CLOCKS_PER_SEC));
     }
 
-    void summary() {
+    void summary(bool csv = false) {
         if(!time)
             run();
 
-        char result[256];
-        sprintf(result, "[%0.2f %s]", (data * 1000.0 * 1000 / *time), unit);
+        if(csv) {
+            printf("%s;%0.2f;%s\n", desc, (data * 1000.0 * 1000 / *time), unit);
+        }
+        else {
+            char result[256];
+            sprintf(result, "[%0.2f %s]", (data * 1000.0 * 1000 / *time), unit);
 
-        char buffer[TERM_WIDTH + 1];
-        std::memset(buffer, '.', sizeof(buffer));
-        buffer[TERM_WIDTH] = '\0';
-        buffer[sprintf(buffer, "%s", desc)] = '.';
-        strcpy(buffer + TERM_WIDTH - strlen(result), result);
-        std::puts(buffer);
+            char buffer[TERM_WIDTH + 1];
+            std::memset(buffer, '.', sizeof(buffer));
+            buffer[TERM_WIDTH] = '\0';
+            buffer[sprintf(buffer, "%s", desc)] = '.';
+            strcpy(buffer + TERM_WIDTH - strlen(result), result);
+            std::puts(buffer);
+        }
     }
 };
 
@@ -60,6 +65,7 @@ struct Options {
     int rsa_max = 2048;
     int ecc_max = 256;
     bool enable_rng = true;
+    bool csv = false;
 };
 
 std::vector<Bench> benches;
@@ -364,6 +370,7 @@ void print_help(const char* argv0) {
     printf("  %s [options]\n", argv0);
     printf("OPTIONS:\n");
     printf("  --help          print help\n");
+    printf("  --csv           print summary in CSV format\n");
     printf("  --norsa         disable RSA benchmarks\n");
     printf("  --noecc         disable ECC benchmarks\n");
     printf("  --norng         disable RNG benchmarks\n");
@@ -379,6 +386,8 @@ int main(int argc, char** argv) {
                 opt.rsa_max = 0;
             else if(!std::strcmp("--noecc", argv[i]))
                 opt.ecc_max = 0;
+            else if(!std::strcmp("--csv", argv[i]))
+                opt.csv = true;
             else if(!std::strcmp("--norng", argv[i]))
                 opt.enable_rng = false;
             else if(!std::strcmp("--eccmax", argv[i])) {
@@ -415,7 +424,7 @@ int main(int argc, char** argv) {
     init(opt);
 
     for(auto& bench : benches)
-        bench.summary();
+        bench.summary(opt.csv);
 
 
     destroy();
