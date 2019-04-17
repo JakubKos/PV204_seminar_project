@@ -29,14 +29,8 @@ class Bench {
 public:
     Bench() = default;
 
-    Bench(void (*f)(void), size_t iter, size_t data, const char* desc, const char* unit) :
-        f(f), iter(iter), data(data), desc(desc), unit(unit) {
-        this->f = f;
-        this->iter = iter;
-        this->data = data;
-        this->desc = desc;
-        this->unit = unit;
-    }
+    Bench(void (*f)(void), size_t iter, size_t data, const char* desc, const char* unit)
+        : f(f), iter(iter), data(data), desc(desc), unit(unit) {}
 
     long run() {
         clock_t begin = clock();
@@ -140,7 +134,7 @@ void init(Options opt) {
             },
             1024*1024,
             128,
-            "RANDOM by 128B",
+            "RNG 128B block",
             "MB/s"
         );
 
@@ -151,7 +145,7 @@ void init(Options opt) {
             },
             1024,
             1024,
-            "ECC_make_key",
+            "ECC make 256b key",
             "op/s"
         );
 
@@ -162,7 +156,7 @@ void init(Options opt) {
             },
             1024,
             128,
-            "ECC HASH",
+            "ECC sign, 256b key",
             "KB/s"
         );
 
@@ -172,7 +166,7 @@ void init(Options opt) {
             },
             1024,
             128,
-            "ECC VERIFY",
+            "ECC verify, 256b key",
             "KB/s"
         );
 
@@ -182,7 +176,7 @@ void init(Options opt) {
             },
             1024,
             128,
-            "ECC ENCRYPT",
+            "ECC encrypt, 256b key",
             "KB/s"
         );
 
@@ -192,7 +186,7 @@ void init(Options opt) {
             },
             1024,
             encECCLen,
-            "ECC DECRYPT",
+            "ECC decrypt, 256b key",
             "KB/s"
         );
     }
@@ -204,7 +198,7 @@ void init(Options opt) {
             },
             512,
             512,
-            "RSA make key 512b",
+            "RSA make 512b key",
             "op/s"
         );
 
@@ -214,7 +208,7 @@ void init(Options opt) {
             },
             1024,
             32,
-            "RSA signature, 512b key",
+            "RSA sign, 512b key",
             "KB/s"
         );
 
@@ -256,7 +250,7 @@ void init(Options opt) {
             },
             256,
             256,
-            "RSA make key 1024b",
+            "RSA make 1024b key",
             "op/s"
         );
 
@@ -266,7 +260,7 @@ void init(Options opt) {
             },
             1024,
             64,
-            "RSA signature, 1024b key",
+            "RSA sign, 1024b key",
             "KB/s"
         );
 
@@ -277,16 +271,6 @@ void init(Options opt) {
             1024,
             128,
             "RSA verify, 1024b key",
-            "KB/s"
-        );
-
-        benches.emplace_back(
-            [](){
-                wc_RsaSSL_Verify(sign256, 256, in, 128, &rsaKey2048);
-            },
-            1024,
-            256,
-            "RSA verify, 2048b key",
             "KB/s"
         );
 
@@ -318,7 +302,7 @@ void init(Options opt) {
             },
             128,
             128,
-            "RSA make key 2048b",
+            "RSA make 2048b key",
             "op/s"
         );
 
@@ -338,7 +322,7 @@ void init(Options opt) {
             },
             1024,
             256,
-            "RSA encrypt, 2048b key",
+            "RSA verify, 2048b key",
             "KB/s"
         );
 
@@ -375,7 +359,16 @@ void destroy() {
     wc_ecc_free(&eccKeyB);
 }
 
-void print_help() {
+void print_help(const char* argv0) {
+    printf("USAGE:\n");
+    printf("  %s [options]\n", argv0);
+    printf("OPTIONS:\n");
+    printf("  --help          print help\n");
+    printf("  --norsa         disable RSA benchmarks\n");
+    printf("  --noecc         disable ECC benchmarks\n");
+    printf("  --norng         disable RNG benchmarks\n");
+    printf("  --rsamax <MAX>  set maximal RSA key length to <MAX>\n");
+    printf("  --eccmax <MAX>  set maximal ECC key length to <MAX>\n");
 }
 
 int main(int argc, char** argv) {
@@ -384,37 +377,37 @@ int main(int argc, char** argv) {
     for(int i = 1; i < argc; ++i) {
             if(!std::strcmp("--norsa", argv[i]))
                 opt.rsa_max = 0;
-            else if(!std::strcmp("--noec", argv[i]))
+            else if(!std::strcmp("--noecc", argv[i]))
                 opt.ecc_max = 0;
             else if(!std::strcmp("--norng", argv[i]))
                 opt.enable_rng = false;
-            else if(!std::strcmp("--ecmax", argv[i])) {
+            else if(!std::strcmp("--eccmax", argv[i])) {
                 if(i + 1 < argc) {
-                    opt.ecc_max = std::atoi(argv[i + 1]);
+                    opt.ecc_max = std::atoi(argv[++i]);
                 }
                 else {
                     fprintf(stderr, "Invalid options, please, read help.\n");
-                    print_help();
+                    print_help(argv[0]);
                     return 1;
                 }
             }
             else if(!std::strcmp("--rsamax", argv[i])) {
                 if(i + 1 < argc) {
-                    opt.rsa_max = std::atoi(argv[i + 1]);
+                    opt.rsa_max = std::atoi(argv[++i]);
                 }
                 else {
                     fprintf(stderr, "Invalid options, please, read help.\n");
-                    print_help();
+                    print_help(argv[0]);
                     return 1;
                 }
             }
             else if(!std::strcmp("--help", argv[i])) {
-                print_help();
+                print_help(argv[0]);
                 return 0;
             }
             else {
                 fprintf(stderr, "Invalid options, please, read help.\n");
-                print_help();
+                print_help(argv[0]);
                 return 1;
             }
     }
