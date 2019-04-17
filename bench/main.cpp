@@ -1,15 +1,22 @@
 #include <cstdio>
-#include <map>
+#include <vector>
 #include <string>
 #include <optional>
 #include <iostream>
+#include <cstring>
+
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 extern "C" {
+
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/random.h>
 #include <wolfssl/wolfcrypt/rsa.h>
 #include <wolfssl/wolfcrypt/ecc.h>
 }
+
+int TERM_WIDTH;
 
 class Bench {
     void(*f)(void);
@@ -42,11 +49,24 @@ public:
         if(!time)
             run();
 
-        printf("%-30s [%.2lf %s/s]\n", desc, (data * 1000.0 * 1000) / *time, unit);
+        char result[256];
+        sprintf(result, "[%0.2f %s]", (data * 1000.0 * 1000 / *time), unit);
+
+        char buffer[TERM_WIDTH + 1];
+        std::memset(buffer, '.', sizeof(buffer));
+        buffer[TERM_WIDTH] = '\0';
+        buffer[sprintf(buffer, "%s", desc)] = '.';
+        strcpy(buffer + TERM_WIDTH - strlen(result), result);
+        std::puts(buffer);
     }
 };
 
-std::map<std::string, Bench> benches;
+struct Options {
+    int rsa_max = 2048;
+    int ecc_max = 256;
+};
+
+std::vector<Bench> benches;
 
 WC_RNG rng;
 RsaKey rsaKey, rsaKey512, rsaKey1024, rsaKey2048;
@@ -71,11 +91,11 @@ byte dec[128];
 ecc_key eccKey, eccKeyA, eccKeyB;
 int ret;
 
-void summary(const char* desc, const char* unit, long ms, long data) {
-    printf("%-30s [%.2lf %s/s]\n", desc, (data * 1000.0 * 1000) / ms, unit);
-}
+void init(Options opt) {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    TERM_WIDTH = w.ws_col;
 
-void init() {
     // RNG
     wc_InitRng(&rng);
     // RSA - init & make
@@ -110,8 +130,7 @@ void init() {
     wc_ecc_sign_hash(in, 128, sig512, &sigLen, &rng, &eccKeyA);
     wc_ecc_encrypt(&eccKeyA, &eccKeyB, in, 128, encECC, &encECCLen, NULL);
 
-
-    benches["rng_128"] = {
+    benches.emplace_back(
         [](){
             byte buff[128];
             wc_RNG_GenerateBlock(&rng, buff, sizeof(buff));
@@ -119,20 +138,20 @@ void init() {
         1024*1024,
         128,
         "RANDOM by 128B",
-        "MB"
-    };
+        "MB/s"
+    );
 
-    benches["ec_make_key"] = {
+    benches.emplace_back(
         [](){
             wc_ecc_make_key_ex(&rng, 32, &eccKey, ECC_SECP256R1);
         },
         1024,
         1024,
         "ECC_make_key",
-        ""
-    };
+        "op/s"
+    );
 
-    benches["ecc_hash"] = {
+    benches.emplace_back(
         [](){
             sigLen = 512;
             wc_ecc_sign_hash(in, 128, sig512, &sigLen, &rng, &eccKeyA);
@@ -140,170 +159,170 @@ void init() {
         1024,
         128,
         "ECC HASH",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["ecc_verify"] = {
+    benches.emplace_back(
         [](){
             wc_ecc_verify_hash(sig512, sigLen, in, 128, &ret, &eccKeyA);
         },
         1024,
         128,
         "ECC VERIFY",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["ecc_encrypt"] = {
+    benches.emplace_back(
         [](){
             wc_ecc_encrypt(&eccKeyA, &eccKeyB, in, 128, encECC, &encECCLen, NULL);
         },
         1024,
         128,
         "ECC ENCRYPT",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["ecc_decrypt"] = {
+    benches.emplace_back(
         [](){
             wc_ecc_decrypt(&eccKeyB, &eccKeyA, encECC, encECCLen, decECC, &decECCLen, NULL);
         },
         1024,
         encECCLen,
         "ECC DECRYPT",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_512"] = {
+    benches.emplace_back(
         [](){
             wc_MakeRsaKey(&rsaKey, 512, e, &rng);
         },
         512,
         512,
         "RSA make key 512b",
-        ""
-    };
+        "op/s"
+    );
 
-    benches["RSA_1024b"] = {
+    benches.emplace_back(
         [](){
             wc_MakeRsaKey(&rsaKey, 1024, e, &rng);
         },
         256,
         256,
         "RSA make key 1024b",
-        ""
-    };
+        "op/s"
+    );
 
-    benches["RSA_2048b"] = {
+    benches.emplace_back(
         [](){
             wc_MakeRsaKey(&rsaKey, 2048, e, &rng);
         },
         128,
         128,
         "RSA make key 2048b",
-        ""
-    };
+        "op/s"
+    );
 
-    benches["RSA_signature_512"] = {
+    benches.emplace_back(
         [](){
             wc_RsaSSL_Sign(in, 32, sign64, 64, &rsaKey512, &rng);
         },
         1024,
         32,
         "RSA signature, 512b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_signature_1024"] = {
+    benches.emplace_back(
         [](){
             wc_RsaSSL_Sign(in, 64, sign128, 128, &rsaKey1024, &rng);
         },
         1024,
         64,
         "RSA signature, 1024b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_signature_2048"] = {
+    benches.emplace_back(
         [](){
             wc_RsaSSL_Sign(in, 128, sign256, 256, &rsaKey2048, &rng);
         },
         1024,
         128,
         "RSA signature, 2048b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_verify_512"] = {
+    benches.emplace_back(
         [](){
             wc_RsaSSL_Verify(sign64, 64, in, 32, &rsaKey512);
         },
         1024,
         64,
         "RSA verify, 512b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_verify_1024"] = {
+    benches.emplace_back(
         [](){
             wc_RsaSSL_Verify(sign128, 128, in, 64, &rsaKey1024);
         },
         1024,
         128,
         "RSA verify, 1024b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_verify_2048"] = {
+    benches.emplace_back(
         [](){
             wc_RsaSSL_Verify(sign256, 256, in, 128, &rsaKey2048);
         },
         1024,
         256,
         "RSA verify, 2048b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_encrypt_2048"] = {
+    benches.emplace_back(
         [](){
             wc_RsaSSL_Verify(sign256, 256, in, 128, &rsaKey2048);
         },
         1024,
         256,
         "RSA encrypt, 2048b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_encrypt_512"] = {
+    benches.emplace_back(
         [](){
             wc_RsaPublicEncrypt(in, 32, enc64, 64, &rsaKey512, &rng);
         },
         1024,
         32,
         "RSA encrypt, 512b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_encrypt_1024"] = {
+    benches.emplace_back(
         [](){
             wc_RsaPublicEncrypt(in, 64, enc128, 128, &rsaKey1024, &rng);
         },
         1024,
         64,
         "RSA encrypt, 1024b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_encrypt_2048"] = {
+    benches.emplace_back(
         [](){
             wc_RsaPublicEncrypt(in, 128, enc256, 256, &rsaKey2048, &rng);
         },
         1024,
         128,
         "RSA encrypt, 2048b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_decrypt_512"] = {
+    benches.emplace_back(
         [](){
             ret = wc_RsaPrivateDecrypt(enc64, 64, dec, 32, &rsaKey512);
             // std::cout << ret << std::endl;
@@ -311,10 +330,10 @@ void init() {
         1024,
         64,
         "RSA decrypt, 512b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_decrypt_1024"] = {
+    benches.emplace_back(
         [](){
             ret = wc_RsaPrivateDecrypt(enc128, 128, dec, 64, &rsaKey1024);
             // std::cout << ret << std::endl;
@@ -322,10 +341,10 @@ void init() {
         1024,
         128,
         "RSA decrypt, 1024b key",
-        "KB"
-    };
+        "KB/s"
+    );
 
-    benches["RSA_decrypt_2048"] = {
+    benches.emplace_back(
         [](){
             ret = wc_RsaPrivateDecrypt(enc256, 256, dec, 128, &rsaKey2048);
             // std::cout << ret << std::endl;
@@ -333,8 +352,8 @@ void init() {
         1024,
         256,
         "RSA decrypt, 2048b key",
-        "KB"
-    };
+        "KB/s"
+    );
 }
 
 void destroy() {
@@ -348,20 +367,33 @@ void destroy() {
     wc_ecc_free(&eccKeyB);
 }
 
-int main(int argc, char** argv) {
-    init();
+void print_help() {
+}
 
-    if (argc == 1) {
-        for(auto& [_, bench] : benches)
-            bench.summary();
+int main(int argc, char** argv) {
+    Options opt;
+
+    for(int i = 1; i < argc; ++i) {
+            if(!std::strcmp("--norsa", argv[i]))
+                opt.rsa_max = 0;
+            else if(!std::strcmp("--noec", argv[i]))
+                opt.ecc_max = 0;
+            else if(!std::strcmp("--help", argv[i])) {
+                print_help();
+                return 0;
+            }
+            else {
+                fprintf(stderr, "Invalid options, please, read help.\n");
+                print_help();
+                return 1;
+            }
     }
-    else {
-        for(int i = 0; i < argc; ++i) {
-            auto found = benches.find(argv[i]);
-            if(found != benches.end())
-                found->second.summary();
-        }
-    }
+
+    init(opt);
+
+    for(auto& bench : benches)
+        bench.summary();
+
 
     destroy();
     return 0;
